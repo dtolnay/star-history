@@ -119,12 +119,12 @@ struct Repositories {
 #[derive(Deserialize)]
 struct Repo {
     name: String,
-    owner: Owner,
+    owner: Account,
     stargazers: Stargazers,
 }
 
-#[derive(Deserialize)]
-struct Owner {
+#[derive(Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Default)]
+struct Account {
     login: String,
 }
 
@@ -135,10 +135,11 @@ struct Stargazers {
     edges: Vec<Star>,
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
 struct Star {
-    starred_at: DateTime<Utc>,
+    #[serde(rename = "starredAt")]
+    time: DateTime<Utc>,
+    node: Account,
 }
 
 #[derive(Deserialize)]
@@ -213,9 +214,9 @@ fn main() -> Result<()> {
     }
 
     let mut work = Vec::new();
-    let mut star_times = Map::new();
+    let mut stars = Map::new();
     for series in &args {
-        star_times.insert(series.clone(), Set::new());
+        stars.insert(series.clone(), Set::new());
         work.push(Work {
             series: series.clone(),
             cursor: Cursor(None),
@@ -277,15 +278,15 @@ fn main() -> Result<()> {
                     let repo = node.name;
 
                     let series = Series::User(user.clone());
-                    let user_star_times = star_times.entry(series).or_default();
+                    let user_stars = stars.entry(series).or_default();
                     for star in &node.stargazers.edges {
-                        user_star_times.insert(star.starred_at);
+                        user_stars.insert(star.clone());
                     }
 
                     let series = Series::Repo(user.clone(), repo.clone());
-                    let repo_star_times = star_times.entry(series).or_default();
+                    let repo_stars = stars.entry(series).or_default();
                     for star in &node.stargazers.edges {
-                        repo_star_times.insert(star.starred_at);
+                        repo_stars.insert(star.clone());
                     }
 
                     if node.stargazers.page_info.has_next_page {
@@ -304,14 +305,20 @@ fn main() -> Result<()> {
     let _ = writeln!(stderr);
 
     let now = Utc::now();
-    for set in star_times.values_mut() {
-        if let Some(first) = set.iter().next().copied() {
-            set.insert(first - Duration::seconds(1));
+    for set in stars.values_mut() {
+        if let Some(first) = set.iter().cloned().next() {
+            set.insert(Star {
+                time: first.time - Duration::seconds(1),
+                node: Default::default(),
+            });
         }
-        match set.iter().next_back().copied() {
-            Some(last) if last >= now => {}
+        match set.iter().next_back() {
+            Some(last) if last.time >= now => {}
             _ => {
-                set.insert(now);
+                set.insert(Star {
+                    time: now,
+                    node: Default::default(),
+                });
             }
         }
     }
@@ -322,12 +329,12 @@ fn main() -> Result<()> {
         data += "      {\"name\":\"";
         data += &arg.to_string();
         data += "\", \"values\":[\n";
-        let star_times = &star_times[arg];
-        for (i, time) in star_times.iter().copied().enumerate() {
+        let stars = &stars[arg];
+        for (i, star) in stars.iter().enumerate() {
             data += "        {\"time\":";
-            data += &time.timestamp().to_string();
+            data += &star.time.timestamp().to_string();
             data += ", \"stars\":";
-            data += &(i - (time == now) as usize).to_string();
+            data += &(i - (star.time == now) as usize).to_string();
             data += "},\n";
         }
         data += "      ]},\n";
@@ -366,6 +373,9 @@ fn query_user(i: usize, user: &str, cursor: &Cursor) -> String {
                   endCursor
                 }
                 edges {
+                  node {
+                    login
+                  }
                   starredAt
                 }
               }
@@ -391,6 +401,9 @@ fn query_repo(i: usize, user: &str, repo: &str, cursor: &Cursor) -> String {
               endCursor
             }
             edges {
+              node {
+                login
+              }
               starredAt
             }
           }
