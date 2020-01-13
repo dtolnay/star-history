@@ -156,7 +156,7 @@ struct Repositories {
 struct Repo {
     name: String,
     owner: Account,
-    stargazers: Stargazers,
+    stargazers: Option<Stargazers>,
 }
 
 #[derive(Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Default)]
@@ -323,22 +323,29 @@ fn main() -> Result<()> {
                     let user = node.owner.login;
                     let repo = node.name;
 
-                    let series = Series::User(user.clone());
-                    let user_stars = stars.entry(series).or_default();
-                    for star in &node.stargazers.edges {
-                        user_stars.insert(star.clone());
-                    }
+                    if let Some(stargazers) = node.stargazers {
+                        let series = Series::User(user.clone());
+                        let user_stars = stars.entry(series).or_default();
+                        for star in &stargazers.edges {
+                            user_stars.insert(star.clone());
+                        }
 
-                    let series = Series::Repo(user.clone(), repo.clone());
-                    let repo_stars = stars.entry(series).or_default();
-                    for star in &node.stargazers.edges {
-                        repo_stars.insert(star.clone());
-                    }
+                        let series = Series::Repo(user.clone(), repo.clone());
+                        let repo_stars = stars.entry(series).or_default();
+                        for star in &stargazers.edges {
+                            repo_stars.insert(star.clone());
+                        }
 
-                    if node.stargazers.page_info.has_next_page {
+                        if stargazers.page_info.has_next_page {
+                            work.push(Work {
+                                series: Series::Repo(user, repo),
+                                cursor: stargazers.page_info.end_cursor,
+                            });
+                        }
+                    } else {
                         work.push(Work {
                             series: Series::Repo(user, repo),
-                            cursor: node.stargazers.page_info.end_cursor,
+                            cursor: Cursor(None),
                         });
                     }
                 }
@@ -412,18 +419,6 @@ fn query_user(i: usize, user: &str, cursor: &Cursor) -> String {
               name
               owner {
                 login
-              }
-              stargazers(first: 100) {
-                pageInfo {
-                  hasNextPage
-                  endCursor
-                }
-                edges {
-                  node {
-                    login
-                  }
-                  starredAt
-                }
               }
             }
           }
