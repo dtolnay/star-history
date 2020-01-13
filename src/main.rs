@@ -4,7 +4,7 @@ use reqwest::blocking::Client;
 use reqwest::header::{AUTHORIZATION, USER_AGENT};
 use serde::de::{Error, IgnoredAny, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
-use std::cmp::Ordering;
+use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap as Map, BTreeSet as Set, VecDeque};
 use std::env;
 use std::fmt::{self, Display};
@@ -269,9 +269,13 @@ fn main() -> Result<()> {
     let client = Client::new();
     let mut stderr = std::io::stderr();
     while !work.is_empty() {
+        let batch_size = cmp::min(work.len(), 50);
+        let defer = work.split_off(batch_size);
+        let batch = mem::replace(&mut work, defer);
+
         let mut query = String::new();
         query += "{\n";
-        for (i, work) in work.iter().enumerate() {
+        for (i, work) in batch.iter().enumerate() {
             let cursor = &work.cursor;
             query += &match &work.series {
                 Series::User(user) => query_user(i, user, cursor),
@@ -298,7 +302,7 @@ fn main() -> Result<()> {
         }
 
         let mut data = response.data;
-        let mut queue = mem::take(&mut work).into_iter();
+        let mut queue = batch.into_iter();
         while let Some(node) = data.pop_front() {
             let id = queue.next();
             match node {
