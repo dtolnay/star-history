@@ -4,6 +4,7 @@ use reqwest::blocking::Client;
 use reqwest::header::{AUTHORIZATION, USER_AGENT};
 use serde::de::{Error, IgnoredAny, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
+use std::cmp::Ordering;
 use std::collections::{BTreeMap as Map, BTreeSet as Set, VecDeque};
 use std::env;
 use std::fmt::{self, Display};
@@ -43,7 +44,7 @@ leave all the checkboxes empty. Save the generated token somewhere like
 
 ";
 
-#[derive(Ord, Eq, PartialOrd, PartialEq, Clone)]
+#[derive(Eq, Clone)]
 enum Series {
     User(String),
     Repo(String, String),
@@ -60,6 +61,34 @@ impl Display for Series {
             }
         }
         Ok(())
+    }
+}
+
+impl Ord for Series {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            (Series::User(luser), Series::User(ruser)) => {
+                luser.to_lowercase().cmp(&ruser.to_lowercase())
+            }
+            (Series::Repo(luser, lrepo), Series::Repo(ruser, rrepo)) => {
+                (luser.to_lowercase(), lrepo.to_lowercase())
+                    .cmp(&(ruser.to_lowercase(), rrepo.to_lowercase()))
+            }
+            (Series::User(_), Series::Repo(..)) => Ordering::Less,
+            (Series::Repo(..), Series::User(_)) => Ordering::Greater,
+        }
+    }
+}
+
+impl PartialOrd for Series {
+    fn partial_cmp(&self, other: &Series) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Series {
+    fn eq(&self, other: &Series) -> bool {
+        self.cmp(other) == Ordering::Equal
     }
 }
 
