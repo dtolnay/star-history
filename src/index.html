@@ -217,29 +217,15 @@
             var xDate = x.invert(mouse[0]);
             var bisect = d3.bisector(function(d) { return d.time; }).right;
             var idx = bisect(d.values, xDate);
-            var beginning = 0;
-            var end = lines[i].getTotalLength();
-            var target = null;
-
-            while (true) {
-              target = Math.floor((beginning + end) / 2);
-              pos = lines[i].getPointAtLength(target);
-              if ((target === end || target === beginning) && pos.x !== mouse[0]) {
-                break;
-              }
-              if (pos.x > mouse[0]) {
-                end = target;
-              } else if (pos.x < mouse[0]) {
-                beginning = target;
-              } else {
-                break; // position found
-              }
-            }
+            var below = d.values[idx == 0 ? 0 : idx - 1];
+            var above = d.values[idx];
+            var interp = below.time == above.time ? 0 : (xDate - below.time) / (above.time - below.time);
+            var val = d3.interpolateNumber(below.stars, above.stars)(interp);
 
             d3.select(this).select('text')
               .text(d.values[idx == 0 ? 0 : idx - 1].stars);
 
-            return "translate(" + mouse[0] + "," + pos.y +")";
+            return "translate(" + mouse[0] + "," + y(val) +")";
           });
       });
   </script>
