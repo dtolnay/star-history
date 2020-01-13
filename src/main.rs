@@ -2,7 +2,7 @@ use anyhow::{bail, Context, Result};
 use chrono::{DateTime, Duration, Utc};
 use reqwest::blocking::Client;
 use reqwest::header::{AUTHORIZATION, USER_AGENT};
-use serde::de::{IgnoredAny, MapAccess, Visitor};
+use serde::de::{Error, IgnoredAny, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::{BTreeMap as Map, BTreeSet as Set, VecDeque};
 use std::env;
@@ -96,6 +96,13 @@ struct Response {
     message: Option<String>,
     #[serde(default, deserialize_with = "deserialize_data")]
     data: VecDeque<Data>,
+    #[serde(default)]
+    errors: Vec<Message>,
+}
+
+#[derive(Deserialize)]
+struct Message {
+    message: String,
 }
 
 enum Data {
@@ -180,9 +187,16 @@ where
             }
             Ok(data)
         }
+
+        fn visit_unit<E>(self) -> Result<Self::Value, E>
+        where
+            E: Error,
+        {
+            Ok(VecDeque::new())
+        }
     }
 
-    deserializer.deserialize_map(ResponseVisitor)
+    deserializer.deserialize_any(ResponseVisitor)
 }
 
 fn main() -> Result<()> {
@@ -249,6 +263,9 @@ fn main() -> Result<()> {
             serde_json::from_str(&json).context("error decoding response body")?;
         if let Some(message) = response.message {
             bail!("error from GitHub api: {}", message);
+        }
+        if let Some(error) = response.errors.first() {
+            bail!("error from GitHub api: {}", error.message);
         }
 
         let mut data = response.data;
