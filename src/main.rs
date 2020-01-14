@@ -13,6 +13,8 @@ use std::io::Write;
 use std::mem;
 use std::process;
 
+static VERSION: &str = concat!("star-history ", env!("CARGO_PKG_VERSION"));
+
 static HELP: &str = concat!(
     "star-history ",
     env!("CARGO_PKG_VERSION"),
@@ -233,6 +235,9 @@ fn main() -> Result<()> {
     for arg in env::args().skip(1) {
         if arg == "--help" {
             print!("{}", HELP);
+            process::exit(0);
+        } else if arg == "--version" {
+            println!("{}", VERSION);
             process::exit(0);
         }
         let mut parts = arg.splitn(2, '/');
