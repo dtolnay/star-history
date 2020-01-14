@@ -391,7 +391,7 @@ fn main() -> Result<()> {
             data += "        {\"time\":";
             data += &star.time.timestamp().to_string();
             data += ", \"stars\":";
-            data += &(i - (star.time == now) as usize).to_string();
+            data += &(i.saturating_sub((star.time == now) as usize)).to_string();
             data += "},\n";
         }
         data += "      ]},\n";
