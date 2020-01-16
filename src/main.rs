@@ -2,7 +2,7 @@ use anyhow::{bail, Context, Result};
 use chrono::{DateTime, Duration, Utc};
 use reqwest::blocking::Client;
 use reqwest::header::{AUTHORIZATION, USER_AGENT};
-use serde::de::{Error, IgnoredAny, MapAccess, Visitor};
+use serde::de::{Error, IgnoredAny, MapAccess, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap as Map, BTreeSet as Set, VecDeque};
@@ -10,6 +10,7 @@ use std::env;
 use std::fmt::{self, Display};
 use std::fs;
 use std::io::Write;
+use std::marker::PhantomData;
 use std::mem;
 use std::process;
 
@@ -170,6 +171,7 @@ struct Account {
 #[serde(rename_all = "camelCase")]
 struct Stargazers {
     page_info: PageInfo,
+    #[serde(deserialize_with = "non_nulls")]
     edges: Vec<Star>,
 }
 
@@ -228,6 +230,39 @@ where
     }
 
     deserializer.deserialize_any(ResponseVisitor)
+}
+
+fn non_nulls<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    struct NonNullsVisitor<T>(PhantomData<fn() -> T>);
+
+    impl<'de, T> Visitor<'de> for NonNullsVisitor<T>
+    where
+        T: Deserialize<'de>,
+    {
+        type Value = Vec<T>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("array")
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: SeqAccess<'de>,
+        {
+            let mut vec = Vec::new();
+            while let Some(next) = seq.next_element::<Option<T>>()? {
+                vec.extend(next);
+            }
+            Ok(vec)
+        }
+    }
+
+    let visitor = NonNullsVisitor(PhantomData);
+    deserializer.deserialize_seq(visitor)
 }
 
 fn main() -> Result<()> {
