@@ -1,18 +1,19 @@
-use anyhow::{bail, Context, Result};
+use anyhow::anyhow;
 use chrono::{DateTime, Duration, Utc};
 use reqwest::blocking::Client;
 use reqwest::header::{AUTHORIZATION, USER_AGENT};
-use serde::de::{Error, IgnoredAny, MapAccess, SeqAccess, Visitor};
+use serde::de::{self, IgnoredAny, MapAccess, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap as Map, BTreeSet as Set, VecDeque};
 use std::env;
 use std::fmt::{self, Display};
 use std::fs;
-use std::io::Write;
+use std::io::{self, Write};
 use std::marker::PhantomData;
 use std::mem;
 use std::process;
+use thiserror::Error;
 
 static VERSION: &str = concat!("star-history ", env!("CARGO_PKG_VERSION"));
 
@@ -46,6 +47,24 @@ leave all the checkboxes empty. Save the generated token somewhere like
     export GITHUB_TOKEN=$(cat ~/.githubtoken)
 
 ";
+
+#[derive(Error, Debug)]
+enum Error {
+    #[error("Error from GitHub api: {0}")]
+    GitHub(String),
+    #[error("failed to decode response body")]
+    DecodeResponse(#[source] serde_json::Error),
+    #[error("no such user: {0}")]
+    NoSuchUser(String),
+    #[error("no such repository: {0}/{1}")]
+    NoSuchRepo(String, String),
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
+    #[error(transparent)]
+    Io(#[from] io::Error),
+}
+
+type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Eq, Clone)]
 enum Series {
@@ -223,7 +242,7 @@ where
 
         fn visit_unit<E>(self) -> Result<Self::Value, E>
         where
-            E: Error,
+            E: de::Error,
         {
             Ok(VecDeque::new())
         }
@@ -265,7 +284,18 @@ where
     deserializer.deserialize_seq(visitor)
 }
 
-fn main() -> Result<()> {
+fn main() {
+    if let Err(err) = try_main() {
+        let prefix = match err {
+            Error::GitHub(_) => "", // already starts with "Error"
+            _ => "Error: ",
+        };
+        let _ = writeln!(io::stderr(), "{}{:?}", prefix, anyhow!(err));
+        process::exit(1);
+    }
+}
+
+fn try_main() -> Result<()> {
     let mut args = Vec::new();
     for arg in env::args().skip(1) {
         if arg == "--help" {
@@ -332,13 +362,12 @@ fn main() -> Result<()> {
             .send()?
             .text()?;
 
-        let response: Response =
-            serde_json::from_str(&json).context("error decoding response body")?;
+        let response: Response = serde_json::from_str(&json).map_err(Error::DecodeResponse)?;
         if let Some(message) = response.message {
-            bail!("error from GitHub api: {}", message);
+            return Err(Error::GitHub(message));
         }
-        if let Some(error) = response.errors.first() {
-            bail!("error from GitHub api: {}", error.message);
+        if let Some(error) = response.errors.into_iter().next() {
+            return Err(Error::GitHub(error.message));
         }
 
         let mut data = response.data;
@@ -347,8 +376,8 @@ fn main() -> Result<()> {
             let id = queue.next();
             match node {
                 Data::User(None) | Data::Repo(None) => match id.unwrap().series {
-                    Series::User(user) => bail!("no such user: {}", user),
-                    Series::Repo(user, repo) => bail!("no such repository: {}/{}", user, repo),
+                    Series::User(user) => return Err(Error::NoSuchUser(user)),
+                    Series::Repo(user, repo) => return Err(Error::NoSuchRepo(user, repo)),
                 },
                 Data::User(Some(node)) => {
                     let user = node.login;
