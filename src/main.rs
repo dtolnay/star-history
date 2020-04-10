@@ -318,14 +318,21 @@ fn try_main() -> Result<()> {
         // We split on the /
         let mut parts = arg.splitn(2, '/');
         // the user will be the first argument in this structure thing
-        // @question what is this structure thing? Is it a tuple, an array, a vec, something else? 
+        // Documentation isn't super clear, but it's some type of struct
+        // which is an iterator
+        // source: https://doc.rust-lang.org/stable/std/env/struct.Args.html
         let user = parts.next().unwrap().to_owned();
         // we look at the next itme
         match parts.next() {
             // if there is something, it will be the repo
-            // @question what is a Series?
+            // Series is an enum, can either be User(string), or Repo(string, string)
+            // and so we push in a struct, which looks like a tuple, first the user, then the repo
+            // .to_owned()
+            // Creates owned data from borrowed data, usually by cloning
+            // source: https://doc.rust-lang.org/std/borrow/trait.ToOwned.html
             Some(repo) => args.push(Series::Repo(user, repo.to_owned())),
             // if not, it means we only have the user
+            // other struct is used, we create a Series::User struct and pass in the user 
             None => args.push(Series::User(user)),
         }
     }
@@ -333,11 +340,16 @@ fn try_main() -> Result<()> {
     // we need a github token to add to our request
     let authorization = match env::var("GITHUB_TOKEN") {
         // it's a bearer token, we trim any whitespace 
-        // @question (note: does trim only trim end, or both sides?)
+        // trims both sides
+        // "Returns a string slice with leading and trailing whitespace removed."
+        // source: https://doc.rust-lang.org/std/string/struct.String.html#method.trim
         Ok(token) => format!("bearer {}", token.trim()),
         // If it's not there, we tell the user we're missing it
         Err(_) => {
-            // @question what's the difference between eprint! and println!? console.error vs console.log?
+            // eprint! is like println! but prints to the standard error 
+            // like console.error in js vs. console.log
+            // TIL: "Use eprint! only for error and progress messages. Use print! instead for the primary output of your program."
+            // Source: https://doc.rust-lang.org/std/macro.eprint.html
             eprint!("{}", MISSING_TOKEN);
             // and exit with 1, because it's unexpected
             process::exit(1);
@@ -351,29 +363,58 @@ fn try_main() -> Result<()> {
         process::exit(1);
     }
 
-    // @question why are we using a Vec, and why is it called work, what exactly is work?
+    // Vec is a "growable array type"
+    // and we don't know how big the "work" will be
+    // "work" is essentially all the data points relate to the star history
+    // @question wait...is it though? Will have to come back here
+    // Source: https://doc.rust-lang.org/std/vec/struct.Vec.html
     let mut work = Vec::new();
-    // @question why are we using a Map? (haven't looked at Maps in Rust yet)
+    // couldn't find much ih the docs related to Map. 
+    // Source: https://doc.rust-lang.org/beta/core/iter/struct.Map.html
     let mut stars = Map::new();
-    // @question what is series?
+    // this is series because remember above we created Series::User or Series::Repo and 
+    // pushed those into args
     for series in &args {
-        // @confused hmm... what does .insert do on a Map, insert into the Map these two things as a tuple?
-        // but what are clone the args
+        // I _think_ insert is inserting a key-value into stars, which is a Map
+        // so we clone the series (remember this is Series::User, or Series::Repo)
+        // and that's the key, and then the value is a new Set.
+        // @question why can I only find docs about HashSets but not Sets in Rust?
+        // source: https://doc.rust-lang.org/std/collections/struct.HashSet.html 
+        // I assume it's similar to a set in JS which is a collection of unique values
+        // source: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
         stars.insert(series.clone(), Set::new());
         // @question what is Work? It looks like a struct, but would be nice to have a description or something
         // and cursor...I saw that in the gql request, but wasn't sure what it was
+        // Work is a struct with two properties: series and cursor
+        // series is what we've seen so far (Series::User/Repo)
+        // @question cursor, I'm not sure - it's a struct Cursor(Option<String>);
+        // which we initialize with None. I think because Option can be Result or None
+        // We take this new struct (Work) and push it into our work Vec
         work.push(Work {
             series: series.clone(),
             cursor: Cursor(None),
         });
     }
-    // Stopped here...
 
+    // Create a new Client, so we can make requests to the GitHub API
+    // (note to self: I guess I took that for granted and thought you could "just do it" without any packages)
     let client = Client::new();
+    // "Stderr, also known as standard error, is the default file descriptor where a process can write error messages"
+    // source: https://www.computerhope.com/jargon/s/stderr.htm
     let mut stderr = std::io::stderr();
+    // While we have work to do (i.e. while work is not empty)
     while !work.is_empty() {
+        // stopped here
+        // We want to batch the work, we compare the length of the work and the number 50 
+        // and we take the smaller size and make that our batch_size
+        // @question do we do this because the project supports multiple users/projects at once?
         let batch_size = cmp::min(work.len(), 50);
+        // we split the work off at the given index? 
+        // source: https://doc.rust-lang.org/std/vec/struct.Vec.html#method.split_off
+        // and that's what we defer, which I assume we'll do after we finish the first batch
         let defer = work.split_off(batch_size);
+        // @question what is mem::replace
+        // STOPPED HERE
         let batch = mem::replace(&mut work, defer);
 
         let mut query = String::new();
