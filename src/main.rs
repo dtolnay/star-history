@@ -285,56 +285,89 @@ where
 }
 
 fn main() {
+    // Check for GitHub error when calling try_main
     if let Err(err) = try_main() {
         let prefix = match err {
             Error::GitHub(_) => "", // already starts with "Error"
             _ => "Error: ",
         };
+        // If there is one, we write it out to the user
         let _ = writeln!(io::stderr(), "{}{:?}", prefix, anyhow!(err));
+        // Then exit
         process::exit(1);
     }
 }
 
+// This is where the main program actually happens
 fn try_main() -> Result<()> {
+    // Create a mutable args to hold our cli args
     let mut args = Vec::new();
     for arg in env::args().skip(1) {
+        // First check for the help flag
         if arg == "--help" {
             print!("{}", HELP);
+            // Exit with 0 because --help is a valid argument
             process::exit(0);
         } else if arg == "--version" {
             println!("{}", VERSION);
+            // Exit with 0 because --version is also a valid argument
             process::exit(0);
         }
+        // Not sure what this does, let's test in Rust playground...
+        // Update: https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=f11e6b822f3e0332fdc2256f1ebb9488
+        // We split on the /
         let mut parts = arg.splitn(2, '/');
+        // the user will be the first argument in this structure thing
+        // @question what is this structure thing? Is it a tuple, an array, a vec, something else? 
         let user = parts.next().unwrap().to_owned();
+        // we look at the next itme
         match parts.next() {
+            // if there is something, it will be the repo
+            // @question what is a Series?
             Some(repo) => args.push(Series::Repo(user, repo.to_owned())),
+            // if not, it means we only have the user
             None => args.push(Series::User(user)),
         }
     }
 
+    // we need a github token to add to our request
     let authorization = match env::var("GITHUB_TOKEN") {
+        // it's a bearer token, we trim any whitespace 
+        // @question (note: does trim only trim end, or both sides?)
         Ok(token) => format!("bearer {}", token.trim()),
+        // If it's not there, we tell the user we're missing it
         Err(_) => {
+            // @question what's the difference between eprint! and println!? console.error vs console.log?
             eprint!("{}", MISSING_TOKEN);
+            // and exit with 1, because it's unexpected
             process::exit(1);
         }
     };
 
+    // if no args, we also print help
     if args.is_empty() {
         eprint!("{}", HELP);
+        // and exit with 1, because it's unexpected
         process::exit(1);
     }
 
+    // @question why are we using a Vec, and why is it called work, what exactly is work?
     let mut work = Vec::new();
+    // @question why are we using a Map? (haven't looked at Maps in Rust yet)
     let mut stars = Map::new();
+    // @question what is series?
     for series in &args {
+        // @confused hmm... what does .insert do on a Map, insert into the Map these two things as a tuple?
+        // but what are clone the args
         stars.insert(series.clone(), Set::new());
+        // @question what is Work? It looks like a struct, but would be nice to have a description or something
+        // and cursor...I saw that in the gql request, but wasn't sure what it was
         work.push(Work {
             series: series.clone(),
             cursor: Cursor(None),
         });
     }
+    // Stopped here...
 
     let client = Client::new();
     let mut stderr = std::io::stderr();
