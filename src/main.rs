@@ -387,7 +387,8 @@ fn try_main() -> Result<()> {
         // and cursor...I saw that in the gql request, but wasn't sure what it was
         // Work is a struct with two properties: series and cursor
         // series is what we've seen so far (Series::User/Repo)
-        // @question cursor, I'm not sure - it's a struct Cursor(Option<String>);
+        // cursor: when we start the work, we don't know if it will all come back in one request
+        // hence why cursor is None -> null in JS
         // which we initialize with None. I think because Option can be Result or None
         // We take this new struct (Work) and push it into our work Vec
         work.push(Work {
@@ -521,6 +522,7 @@ fn try_main() -> Result<()> {
 
                         // Same thing
                         // If there's another page, we need to do this all over again
+                        // We then know the end_cursor because it has come back as part of the GraphQL request response payload
                         if stargazers.page_info.has_next_page {
                             work.push(Work {
                                 series: Series::Repo(user, repo),
