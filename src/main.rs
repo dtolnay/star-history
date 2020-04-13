@@ -407,27 +407,40 @@ fn try_main() -> Result<()> {
         // stopped here
         // We want to batch the work, we compare the length of the work and the number 50 
         // and we take the smaller size and make that our batch_size
-        // @question do we do this because the project supports multiple users/projects at once?
+        // @question is this because the project supports multiple users/projects at once?
         let batch_size = cmp::min(work.len(), 50);
-        // we split the work off at the given index? 
+        // @question why are we splitting off at the batch_size? Both why in general, and why batch_size for the split point?
         // source: https://doc.rust-lang.org/std/vec/struct.Vec.html#method.split_off
         // and that's what we defer, which I assume we'll do after we finish the first batch
         let defer = work.split_off(batch_size);
-        // @question what is mem::replace
-        // STOPPED HERE
+        // according to the std lib docs
+        // "Moves src into the referenced dest, returning the previous dest value.
+        // Neither value is dropped."
+        // source: https://doc.rust-lang.org/std/mem/fn.replace.html
+        // @question why do we need to replace work with defer???
         let batch = mem::replace(&mut work, defer);
 
+        // This is to create our GraphQL query to the GitHub API
         let mut query = String::new();
         query += "{\n";
+        // iterate over the batch
         for (i, work) in batch.iter().enumerate() {
+            // @question what is cursor? 
             let cursor = &work.cursor;
+            // Here, we check the work.series to see what we have
+            // then use our helper fn's "query_user" and "query_repo"
+            // which return our user and repo queries respectively
             query += &match &work.series {
                 Series::User(user) => query_user(i, user, cursor),
                 Series::Repo(user, repo) => query_repo(i, user, repo, cursor),
             };
         }
+        // @question it would be really helpful to have some examples
+        // i.e. when you ask for start history of user dtolnay, the query looks like this
+        // i.e. when you ask for two users dtolnay and jsjoeio, the query looks like that
         query += "}\n";
 
+        // Send our GraphQL request and get back json
         let json = client
             .post("https://api.github.com/graphql")
             .header(USER_AGENT, "dtolnay/star-history")
@@ -436,29 +449,44 @@ fn try_main() -> Result<()> {
             .send()?
             .text()?;
 
+        // we grab the response from the json
+        // @question what is serde_json?
         let response: Response = serde_json::from_str(&json).map_err(Error::DecodeResponse)?;
+        // if there is some message, we show that as the error message
+        // @question what would be an example of that? I don't understand the difference between a message and an error.message?
         if let Some(message) = response.message {
             return Err(Error::GitHub(message));
         }
+        // if there is an error, we return the github error
         if let Some(error) = response.errors.into_iter().next() {
             return Err(Error::GitHub(error.message));
         }
 
+        // Otherwise, we have the data!
         let mut data = response.data;
+        // start a queue from the batch?
         let mut queue = batch.into_iter();
+        // @question I'm not too sure what this part of the code is doing
         while let Some(node) = data.pop_front() {
             let id = queue.next();
             match node {
+                // check for no user data or repo data
+                // in which case we would return the proper error
                 Data::User(None) | Data::Repo(None) => match id.unwrap().series {
                     Series::User(user) => return Err(Error::NoSuchUser(user)),
                     Series::Repo(user, repo) => return Err(Error::NoSuchRepo(user, repo)),
                 },
+                // if we have the user data
                 Data::User(Some(node)) => {
                     let user = node.login;
                     for repo in node.repositories.nodes {
                         data.push_back(Data::Repo(Some(repo)));
                     }
 
+                    // oh now i get it!
+                    // if there is more data
+                    // we push to work so we can do this all over again, like a loop
+                    // and the cursor is where we left off
                     if node.repositories.page_info.has_next_page {
                         work.push(Work {
                             series: Series::User(user),
@@ -466,23 +494,33 @@ fn try_main() -> Result<()> {
                         });
                     }
                 }
+                // the repo gets a little trickier
                 Data::Repo(Some(node)) => {
                     let user = node.owner.login;
                     let repo = node.name;
 
+                    // if there are stargazers (which we should see what happens if there is no stargazers, like a new repo)
                     if let Some(stargazers) = node.stargazers {
+                        // @question why do we need to clone the user and create a "let series"?
+                        // yeah, I don't understand this block here from 506 - 510? What's the purpose?
+                        // are we cloning and collecting so that we have a copy of this data, which will then be part of
+                        // the large collection used for the graph? that's my best guess
                         let series = Series::User(user.clone());
                         let user_stars = stars.entry(series).or_default();
                         for star in &stargazers.edges {
                             user_stars.insert(star.clone());
                         }
 
+                        // same as aboe. my guess is we want to clone this data and keep track
+                        // in case we need to make more requests and get more data
                         let series = Series::Repo(user.clone(), repo.clone());
                         let repo_stars = stars.entry(series).or_default();
                         for star in &stargazers.edges {
                             repo_stars.insert(star.clone());
                         }
 
+                        // Same thing
+                        // If there's another page, we need to do this all over again
                         if stargazers.page_info.has_next_page {
                             work.push(Work {
                                 series: Series::Repo(user, repo),
@@ -490,6 +528,8 @@ fn try_main() -> Result<()> {
                             });
                         }
                     } else {
+                        // @question why the else block? if we have the data, can't we stop?
+                        // instead of adding more work?
                         work.push(Work {
                             series: Series::Repo(user, repo),
                             cursor: Cursor(None),
@@ -499,19 +539,26 @@ fn try_main() -> Result<()> {
             }
         }
 
+        // @question what is this for?
         let _ = write!(stderr, ".");
         let _ = stderr.flush();
     }
     let _ = writeln!(stderr);
 
+    // Grabe the time now
     let now = Utc::now();
+    // loop through our stars
     for set in stars.values_mut() {
         if let Some(first) = set.iter().cloned().next() {
+            // and insert a star into our set
+            // to be used for the graph
             set.insert(Star {
                 time: first.time - Duration::seconds(1),
                 node: Default::default(),
             });
         }
+        // @question what's happening here?
+        // @question what is .next_back()?
         match set.iter().next_back() {
             Some(last) if last.time >= now => {}
             _ => {
@@ -523,6 +570,10 @@ fn try_main() -> Result<()> {
         }
     }
 
+    // @question, what are we building here? What is this data going to be?
+    // oh... var data...looks like a JavaScript value that will be used in graph
+    // looks like JSON
+    // @todo Would be nice to see the example
     let mut data = String::new();
     data += "var data = [\n";
     for arg in &args {
@@ -541,18 +592,25 @@ fn try_main() -> Result<()> {
     }
     data += "    ];";
 
+    // We then look at our index.html file and replace our data with our actual data
     let html = include_str!("index.html").replace("var data = [];", &data);
+    // create a temp directory 
     let dir = env::temp_dir().join("star-history");
     fs::create_dir_all(&dir)?;
+    // used the now timestamp for the name
     let path = dir.join(format!("{}.html", now.timestamp()));
+    // write the file to disk
     fs::write(&path, html)?;
 
+    // open the path
     if opener::open(&path).is_err() {
         eprintln!("graph written to {}", path.display());
     }
+    // @question what is this Ok(()) for?
     Ok(())
 }
 
+// A function to query a GitHub user
 fn query_user(i: usize, user: &str, cursor: &Cursor) -> String {
     r#"
         user$i: user(login: "$user") {
@@ -576,6 +634,7 @@ fn query_user(i: usize, user: &str, cursor: &Cursor) -> String {
     .replace("$cursor", &cursor.to_string())
 }
 
+// A function to query a GitHub repo
 fn query_repo(i: usize, user: &str, repo: &str, cursor: &Cursor) -> String {
     r#"
         repo$i: repository(owner: "$user", name: "$repo") {
