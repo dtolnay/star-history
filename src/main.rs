@@ -523,6 +523,7 @@ fn try_main() -> Result<()> {
                         // Same thing
                         // If there's another page, we need to do this all over again
                         // We then know the end_cursor because it has come back as part of the GraphQL request response payload
+                        // @todo - I think the logic goes here for compare ing the 
                         if stargazers.page_info.has_next_page {
                             work.push(Work {
                                 series: Series::Repo(user, repo),
@@ -644,7 +645,7 @@ fn query_repo(i: usize, user: &str, repo: &str, forward_cursor: &Cursor, backwar
           owner {
             login
           }
-          forward: stargazers(after: $forward_cursor, first: 100) {
+          forwardStargazers: stargazers(after: $forward_cursor, first: 100) {
             pageInfo {
               hasNextPage
               endCursor
@@ -656,7 +657,7 @@ fn query_repo(i: usize, user: &str, repo: &str, forward_cursor: &Cursor, backwar
               starredAt
             }
           }
-          backward: stargazers(before: $backward_cursor, last: 100) {
+          backwardStargazers: stargazers(before: $backward_cursor, last: 100) {
             pageInfo {
               hasNextPage
               endCursor
