@@ -645,7 +645,7 @@ fn query_repo(i: usize, user: &str, repo: &str, forward_cursor: &Cursor, backwar
           owner {
             login
           }
-          forwardStargazers: stargazers(after: $forward_cursor, first: 100) {
+          forwardStargazers: stargazers(after: $forward_cursor, first: 100, orderBy: { direction: ASC, field: STARRED_AT }) {
             pageInfo {
               hasNextPage
               endCursor
@@ -657,7 +657,7 @@ fn query_repo(i: usize, user: &str, repo: &str, forward_cursor: &Cursor, backwar
               starredAt
             }
           }
-          backwardStargazers: stargazers(before: $backward_cursor, last: 100) {
+          backwardStargazers: stargazers(before: $backward_cursor, last: 100, orderBy: { direction: DESC, field: STARRED_AT }) {
             pageInfo {
               hasNextPage
               endCursor
