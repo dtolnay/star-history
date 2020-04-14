@@ -637,14 +637,26 @@ fn query_user(i: usize, user: &str, cursor: &Cursor) -> String {
 }
 
 // A function to query a GitHub repo
-fn query_repo(i: usize, user: &str, repo: &str, cursor: &Cursor) -> String {
+fn query_repo(i: usize, user: &str, repo: &str, forward_cursor: &Cursor, backward_cursor: &Cursor) -> String {
     r#"
         repo$i: repository(owner: "$user", name: "$repo") {
           name
           owner {
             login
           }
-          stargazers(after: $cursor, first: 100) {
+          forward: stargazers(after: $forward_cursor, first: 100) {
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+            edges {
+              node {
+                login
+              }
+              starredAt
+            }
+          }
+          backward: stargazers(before: $backward_cursor, last: 100) {
             pageInfo {
               hasNextPage
               endCursor
@@ -661,5 +673,6 @@ fn query_repo(i: usize, user: &str, repo: &str, cursor: &Cursor) -> String {
     .replace("$i", &i.to_string())
     .replace("$user", user)
     .replace("$repo", repo)
-    .replace("$cursor", &cursor.to_string())
+    .replace("$forward_cursor", &forward_cursor.to_string())
+    .replace("$backward_cursor", &backward_cursor.to_string())
 }
