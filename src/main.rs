@@ -13,6 +13,7 @@ use std::io::{self, Write};
 use std::marker::PhantomData;
 use std::mem;
 use std::process;
+use std::fmt::Debug;
 use thiserror::Error;
 
 static VERSION: &str = concat!("star-history ", env!("CARGO_PKG_VERSION"));
@@ -66,7 +67,7 @@ enum Error {
 
 type Result<T, E = Error> = std::result::Result<T, E>;
 
-#[derive(Eq, Clone)]
+#[derive(Eq, Clone, Debug)]
 enum Series {
     User(String),
     Repo(String, String),
@@ -114,7 +115,7 @@ impl PartialEq for Series {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(transparent)]
 struct Cursor(Option<String>);
 
@@ -132,6 +133,7 @@ impl Display for Cursor {
     }
 }
 
+#[derive(Debug)]
 struct Work {
     series: Series,
     cursor: Cursor,
@@ -181,7 +183,7 @@ struct Repo {
     stargazers: Option<Stargazers>,
 }
 
-#[derive(Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Default)]
+#[derive(Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Default)]
 struct Account {
     login: String,
 }
@@ -194,7 +196,7 @@ struct Stargazers {
     edges: Vec<Star>,
 }
 
-#[derive(Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
+#[derive(Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Debug)]
 struct Star {
     #[serde(rename = "starredAt")]
     time: DateTime<Utc>,
@@ -397,6 +399,9 @@ fn try_main() -> Result<()> {
         });
     }
 
+    println!("what does work look like? {:?}", work);
+    println!("what does stars look like? {:?}", stars);
+
     // Create a new Client, so we can make requests to the GitHub API
     // (note to self: I guess I took that for granted and thought you could "just do it" without any packages)
     let client = Client::new();
@@ -546,6 +551,8 @@ fn try_main() -> Result<()> {
         let _ = write!(stderr, ".");
         let _ = stderr.flush();
     }
+    println!("what does work look like at the end? {:?}", work);
+    println!("what does stars look like at the end? {:?}", stars);
     let _ = writeln!(stderr);
 
     // Grabe the time now
@@ -638,26 +645,14 @@ fn query_user(i: usize, user: &str, cursor: &Cursor) -> String {
 }
 
 // A function to query a GitHub repo
-fn query_repo(i: usize, user: &str, repo: &str, forward_cursor: &Cursor, backward_cursor: &Cursor) -> String {
+fn query_repo(i: usize, user: &str, repo: &str, cursor: &Cursor) -> String {
     r#"
         repo$i: repository(owner: "$user", name: "$repo") {
           name
           owner {
             login
           }
-          forwardStargazers: stargazers(after: $forward_cursor, first: 100, orderBy: { direction: ASC, field: STARRED_AT }) {
-            pageInfo {
-              hasNextPage
-              endCursor
-            }
-            edges {
-              node {
-                login
-              }
-              starredAt
-            }
-          }
-          backwardStargazers: stargazers(before: $backward_cursor, last: 100, orderBy: { direction: DESC, field: STARRED_AT }) {
+          stargazers(after: $cursor, first: 5, orderBy: { direction: ASC, field: STARRED_AT }) {
             pageInfo {
               hasNextPage
               endCursor
@@ -674,6 +669,5 @@ fn query_repo(i: usize, user: &str, repo: &str, forward_cursor: &Cursor, backwar
     .replace("$i", &i.to_string())
     .replace("$user", user)
     .replace("$repo", repo)
-    .replace("$forward_cursor", &forward_cursor.to_string())
-    .replace("$backward_cursor", &backward_cursor.to_string())
+    .replace("$cursor", &cursor.to_string())
 }
