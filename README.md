@@ -1,7 +1,7 @@
 GitHub star history
 ===================
 
-[![Build Status](https://api.travis-ci.com/dtolnay/star-history.svg?branch=master)](https://travis-ci.com/dtolnay/star-history)
+[![Build Status](https://img.shields.io/github/workflow/status/dtolnay/star-history/CI/master)](https://github.com/dtolnay/star-history/actions?query=branch%3Amaster)
 [![Latest Version](https://img.shields.io/crates/v/star-history.svg)](https://crates.io/crates/star-history)
 
 Command line program to generate a graph showing number of GitHub stars of a
