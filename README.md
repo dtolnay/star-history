@@ -18,7 +18,7 @@ $ cargo install star-history
 
 ## Screenshot
 
-![star history of rust-lang/rust](https://user-images.githubusercontent.com/1940490/72231437-3761ff80-3570-11ea-8658-6a269feb3a21.png)
+![star history of rust-lang/rust](https://raw.githubusercontent.com/gist/dtolnay/72ae06ef9e94271641029adf471150f5/raw/79d3bb4334b16973c072bb5ccfebd5b50bf5a130/rust-lang.svg)
 
 <br>
 
