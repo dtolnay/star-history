@@ -370,8 +370,8 @@ fn try_main(log: &mut Log) -> Result<()> {
         if let Some(message) = response.message {
             return Err(Error::GitHub(message));
         }
-        if let Some(error) = response.errors.into_iter().next() {
-            return Err(Error::GitHub(error.message));
+        for err in response.errors {
+            log.error(Error::GitHub(err.message));
         }
 
         let mut data = response.data;
