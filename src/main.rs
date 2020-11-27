@@ -122,7 +122,7 @@ impl PartialEq for Series {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(transparent)]
 struct Cursor(Option<String>);
 
@@ -150,7 +150,7 @@ struct Request {
     query: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct Response {
     message: Option<String>,
     #[serde(default, deserialize_with = "deserialize_data")]
@@ -159,42 +159,43 @@ struct Response {
     errors: Vec<Message>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct Message {
     message: String,
 }
 
+#[derive(Debug)]
 enum Data {
     User(Option<User>),
     Repo(Option<Repo>),
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct User {
     login: String,
     repositories: Repositories,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct Repositories {
     page_info: PageInfo,
     nodes: Vec<Repo>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct Repo {
     name: String,
     owner: Account,
     stargazers: Option<Stargazers>,
 }
 
-#[derive(Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Default)]
+#[derive(Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Default, Debug)]
 struct Account {
     login: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct Stargazers {
     page_info: PageInfo,
@@ -202,14 +203,14 @@ struct Stargazers {
     edges: Vec<Star>,
 }
 
-#[derive(Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
+#[derive(Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Debug)]
 struct Star {
     #[serde(rename = "starredAt")]
     time: DateTime<Utc>,
     node: Account,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct PageInfo {
     has_next_page: bool,
