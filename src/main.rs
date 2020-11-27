@@ -4,7 +4,9 @@
 //! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
 //! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?style=for-the-badge&labelColor=555555&logoColor=white&logo=data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDUxMiA1MTIiPjxwYXRoIGZpbGw9IiNmNWY1ZjUiIGQ9Ik00ODguNiAyNTAuMkwzOTIgMjE0VjEwNS41YzAtMTUtOS4zLTI4LjQtMjMuNC0zMy43bC0xMDAtMzcuNWMtOC4xLTMuMS0xNy4xLTMuMS0yNS4zIDBsLTEwMCAzNy41Yy0xNC4xIDUuMy0yMy40IDE4LjctMjMuNCAzMy43VjIxNGwtOTYuNiAzNi4yQzkuMyAyNTUuNSAwIDI2OC45IDAgMjgzLjlWMzk0YzAgMTMuNiA3LjcgMjYuMSAxOS45IDMyLjJsMTAwIDUwYzEwLjEgNS4xIDIyLjEgNS4xIDMyLjIgMGwxMDMuOS01MiAxMDMuOSA1MmMxMC4xIDUuMSAyMi4xIDUuMSAzMi4yIDBsMTAwLTUwYzEyLjItNi4xIDE5LjktMTguNiAxOS45LTMyLjJWMjgzLjljMC0xNS05LjMtMjguNC0yMy40LTMzLjd6TTM1OCAyMTQuOGwtODUgMzEuOXYtNjguMmw4NS0zN3Y3My4zek0xNTQgMTA0LjFsMTAyLTM4LjIgMTAyIDM4LjJ2LjZsLTEwMiA0MS40LTEwMi00MS40di0uNnptODQgMjkxLjFsLTg1IDQyLjV2LTc5LjFsODUtMzguOHY3NS40em0wLTExMmwtMTAyIDQxLjQtMTAyLTQxLjR2LS42bDEwMi0zOC4yIDEwMiAzOC4ydi42em0yNDAgMTEybC04NSA0Mi41di03OS4xbDg1LTM4Ljh2NzUuNHptMC0xMTJsLTEwMiA0MS40LTEwMi00MS40di0uNmwxMDItMzguMiAxMDIgMzguMnYuNnoiPjwvcGF0aD48L3N2Zz4K
 
-use anyhow::anyhow;
+mod log;
+
+use crate::log::Log;
 use chrono::{DateTime, Duration, Utc};
 use reqwest::blocking::Client;
 use reqwest::header::{AUTHORIZATION, USER_AGENT};
@@ -15,7 +17,7 @@ use std::collections::{BTreeMap as Map, BTreeSet as Set, VecDeque};
 use std::env;
 use std::fmt::{self, Display};
 use std::fs;
-use std::io::{self, Write};
+use std::io;
 use std::marker::PhantomData;
 use std::mem;
 use std::process;
@@ -291,17 +293,14 @@ where
 }
 
 fn main() {
-    if let Err(err) = try_main() {
-        let prefix = match err {
-            Error::GitHub(_) => "", // already starts with "Error"
-            _ => "Error: ",
-        };
-        let _ = writeln!(io::stderr(), "{}{:?}", prefix, anyhow!(err));
+    let ref mut log = Log::new();
+    if let Err(err) = try_main(log) {
+        log.error(err);
         process::exit(1);
     }
 }
 
-fn try_main() -> Result<()> {
+fn try_main(log: &mut Log) -> Result<()> {
     let mut args = Vec::new();
     for arg in env::args().skip(1) {
         if arg == "--help" {
@@ -343,7 +342,6 @@ fn try_main() -> Result<()> {
     }
 
     let client = Client::new();
-    let mut stderr = std::io::stderr();
     while !work.is_empty() {
         let batch_size = cmp::min(work.len(), 50);
         let defer = work.split_off(batch_size);
@@ -431,10 +429,8 @@ fn try_main() -> Result<()> {
             }
         }
 
-        let _ = write!(stderr, ".");
-        let _ = stderr.flush();
+        log.tick();
     }
-    let _ = writeln!(stderr);
 
     let now = Utc::now();
     for set in stars.values_mut() {
@@ -480,7 +476,7 @@ fn try_main() -> Result<()> {
     fs::write(&path, html)?;
 
     if opener::open(&path).is_err() {
-        eprintln!("graph written to {}", path.display());
+        writeln!(log, "graph written to {}", path.display());
     }
     Ok(())
 }
