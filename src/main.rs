@@ -6,6 +6,7 @@
 
 #![allow(
     clippy::default_trait_access,
+    clippy::let_underscore_drop,
     clippy::similar_names,
     clippy::single_match_else,
     clippy::too_many_lines,
