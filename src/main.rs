@@ -7,6 +7,8 @@
 #![allow(
     clippy::default_trait_access,
     clippy::let_underscore_drop,
+    // Clippy bug: https://github.com/rust-lang/rust-clippy/issues/7422
+    clippy::nonstandard_macro_braces,
     clippy::similar_names,
     clippy::single_match_else,
     clippy::too_many_lines,
