@@ -447,7 +447,7 @@ fn try_main(log: &mut Log) -> Result<()> {
 
     let now = Utc::now();
     for set in stars.values_mut() {
-        if let Some(first) = set.iter().cloned().next() {
+        if let Some(first) = set.iter().next() {
             set.insert(Star {
                 time: first.time - Duration::seconds(1),
                 node: Default::default(),
