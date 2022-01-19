@@ -448,8 +448,9 @@ fn try_main(log: &mut Log) -> Result<()> {
     let now = Utc::now();
     for set in stars.values_mut() {
         if let Some(first) = set.iter().next() {
+            let first_time = first.time;
             set.insert(Star {
-                time: first.time - Duration::seconds(1),
+                time: first_time - Duration::seconds(1),
                 node: Default::default(),
             });
         }
