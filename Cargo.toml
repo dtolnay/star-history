@@ -2,12 +2,12 @@
 name = "star-history"
 version = "1.0.2"
 authors = ["David Tolnay <dtolnay@gmail.com>"]
-edition = "2021"
-license = "MIT OR Apache-2.0"
 description = "Graph history of GitHub stars of a user or repo over time"
-repository = "https://github.com/dtolnay/star-history"
-readme = "README.md"
+edition = "2021"
 exclude = ["screenshots"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/dtolnay/star-history"
 
 [dependencies]
 anyhow = "1.0"
