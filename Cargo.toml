@@ -2,6 +2,7 @@
 name = "star-history"
 version = "1.0.2"
 authors = ["David Tolnay <dtolnay@gmail.com>"]
+categories = ["command-line-utilities"]
 description = "Graph history of GitHub stars of a user or repo over time"
 edition = "2021"
 exclude = ["screenshots"]
