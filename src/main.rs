@@ -13,7 +13,8 @@
     clippy::similar_names,
     clippy::single_match_else,
     clippy::too_many_lines,
-    clippy::toplevel_ref_arg
+    clippy::toplevel_ref_arg,
+    clippy::uninlined_format_args,
 )]
 
 mod log;
