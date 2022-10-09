@@ -325,10 +325,17 @@ fn try_main(log: &mut Log) -> Result<()> {
             process::exit(0);
         }
         let mut parts = arg.splitn(2, '/');
-        let user = parts.next().unwrap().to_owned();
+        let user = parts.next().unwrap();
         match parts.next() {
-            Some(repo) => args.push(Series::Repo(user, repo.to_owned())),
-            None => args.push(Series::User(user)),
+            Some(repo) => {
+                let user = user.to_owned();
+                let repo = repo.to_owned();
+                args.push(Series::Repo(user, repo));
+            }
+            None => {
+                let user = user.strip_prefix('@').unwrap_or(user).to_owned();
+                args.push(Series::User(user));
+            }
         }
     }
 
