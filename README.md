@@ -25,8 +25,9 @@ $ cargo install star-history
 ## Usage
 
 We require a token for accessing GitHub's GraphQL API. Head to
-https://github.com/settings/tokens and click "Generate new token". Organizations require
-the `read:org` permission. Save the generated token somewhere like ~/.githubtoken.
+https://github.com/settings/tokens and click "Generate new token". The default
+public access permission is sufficient &mdash; you can leave all the checkboxes
+empty. Save the generated token somewhere like ~/.githubtoken.
 
 Then:
 
