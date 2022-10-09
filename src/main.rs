@@ -89,16 +89,16 @@ type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Eq, Clone)]
 enum Series {
-    User(String),
+    Owner(String),
     Repo(String, String),
 }
 
 impl Display for Series {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Series::User(user) => formatter.write_str(user)?,
-            Series::Repo(user, repo) => {
-                formatter.write_str(user)?;
+            Series::Owner(owner) => formatter.write_str(owner)?,
+            Series::Repo(owner, repo) => {
+                formatter.write_str(owner)?;
                 formatter.write_str("/")?;
                 formatter.write_str(repo)?;
             }
@@ -110,15 +110,15 @@ impl Display for Series {
 impl Ord for Series {
     fn cmp(&self, other: &Self) -> Ordering {
         match (self, other) {
-            (Series::User(luser), Series::User(ruser)) => {
-                luser.to_lowercase().cmp(&ruser.to_lowercase())
+            (Series::Owner(lowner), Series::Owner(rowner)) => {
+                lowner.to_lowercase().cmp(&rowner.to_lowercase())
             }
-            (Series::Repo(luser, lrepo), Series::Repo(ruser, rrepo)) => {
-                (luser.to_lowercase(), lrepo.to_lowercase())
-                    .cmp(&(ruser.to_lowercase(), rrepo.to_lowercase()))
+            (Series::Repo(lowner, lrepo), Series::Repo(rowner, rrepo)) => {
+                (lowner.to_lowercase(), lrepo.to_lowercase())
+                    .cmp(&(rowner.to_lowercase(), rrepo.to_lowercase()))
             }
-            (Series::User(_), Series::Repo(..)) => Ordering::Less,
-            (Series::Repo(..), Series::User(_)) => Ordering::Greater,
+            (Series::Owner(_), Series::Repo(..)) => Ordering::Less,
+            (Series::Repo(..), Series::Owner(_)) => Ordering::Greater,
         }
     }
 }
@@ -179,12 +179,12 @@ struct Message {
 
 #[derive(Debug)]
 enum Data {
-    User(Option<User>),
+    Owner(Option<Owner>),
     Repo(Option<Repo>),
 }
 
 #[derive(Deserialize, Debug)]
-struct User {
+struct Owner {
     login: String,
     repositories: Repositories,
 }
@@ -249,9 +249,9 @@ where
         {
             let mut data = VecDeque::new();
             while let Some(key) = map.next_key::<String>()? {
-                if key.starts_with("user") {
-                    let user = map.next_value::<Option<User>>()?;
-                    data.push_back(Data::User(user));
+                if key.starts_with("owner") {
+                    let owner = map.next_value::<Option<Owner>>()?;
+                    data.push_back(Data::Owner(owner));
                 } else if key.starts_with("repo") {
                     let repo = map.next_value::<Option<Repo>>()?;
                     data.push_back(Data::Repo(repo));
@@ -325,16 +325,16 @@ fn try_main(log: &mut Log) -> Result<()> {
             process::exit(0);
         }
         let mut parts = arg.splitn(2, '/');
-        let user = parts.next().unwrap();
+        let owner = parts.next().unwrap();
         match parts.next() {
             Some(repo) => {
-                let user = user.to_owned();
+                let owner = owner.to_owned();
                 let repo = repo.to_owned();
-                args.push(Series::Repo(user, repo));
+                args.push(Series::Repo(owner, repo));
             }
             None => {
-                let user = user.strip_prefix('@').unwrap_or(user).to_owned();
-                args.push(Series::User(user));
+                let owner = owner.strip_prefix('@').unwrap_or(owner).to_owned();
+                args.push(Series::Owner(owner));
             }
         }
     }
@@ -373,8 +373,8 @@ fn try_main(log: &mut Log) -> Result<()> {
         for (i, work) in batch.iter().enumerate() {
             let cursor = &work.cursor;
             query += &match &work.series {
-                Series::User(user) => query_user(i, user, cursor),
-                Series::Repo(user, repo) => query_repo(i, user, repo, cursor),
+                Series::Owner(owner) => query_owner(i, owner, cursor),
+                Series::Repo(owner, repo) => query_repo(i, owner, repo, cursor),
             };
         }
         query += "}\n";
@@ -400,35 +400,35 @@ fn try_main(log: &mut Log) -> Result<()> {
         while let Some(node) = data.pop_front() {
             let id = queue.next();
             match node {
-                Data::User(None) | Data::Repo(None) => match id.unwrap().series {
-                    Series::User(user) => return Err(Error::NoSuchUser(user)),
-                    Series::Repo(user, repo) => return Err(Error::NoSuchRepo(user, repo)),
+                Data::Owner(None) | Data::Repo(None) => match id.unwrap().series {
+                    Series::Owner(owner) => return Err(Error::NoSuchUser(owner)),
+                    Series::Repo(owner, repo) => return Err(Error::NoSuchRepo(owner, repo)),
                 },
-                Data::User(Some(node)) => {
-                    let user = node.login;
+                Data::Owner(Some(node)) => {
+                    let owner = node.login;
                     for repo in node.repositories.nodes {
                         data.push_back(Data::Repo(Some(repo)));
                     }
 
                     if node.repositories.page_info.has_next_page {
                         work.push(Work {
-                            series: Series::User(user),
+                            series: Series::Owner(owner),
                             cursor: node.repositories.page_info.end_cursor,
                         });
                     }
                 }
                 Data::Repo(Some(node)) => {
-                    let user = node.owner.login;
+                    let owner = node.owner.login;
                     let repo = node.name;
 
                     if let Some(stargazers) = node.stargazers {
-                        let series = Series::User(user.clone());
-                        let user_stars = stars.entry(series).or_default();
+                        let series = Series::Owner(owner.clone());
+                        let owner_stars = stars.entry(series).or_default();
                         for star in &stargazers.edges {
-                            user_stars.insert(star.clone());
+                            owner_stars.insert(star.clone());
                         }
 
-                        let series = Series::Repo(user.clone(), repo.clone());
+                        let series = Series::Repo(owner.clone(), repo.clone());
                         let repo_stars = stars.entry(series).or_default();
                         for star in &stargazers.edges {
                             repo_stars.insert(star.clone());
@@ -436,13 +436,13 @@ fn try_main(log: &mut Log) -> Result<()> {
 
                         if stargazers.page_info.has_next_page {
                             work.push(Work {
-                                series: Series::Repo(user, repo),
+                                series: Series::Repo(owner, repo),
                                 cursor: stargazers.page_info.end_cursor,
                             });
                         }
                     } else {
                         work.push(Work {
-                            series: Series::Repo(user, repo),
+                            series: Series::Repo(owner, repo),
                             cursor: Cursor(None),
                         });
                     }
@@ -503,9 +503,9 @@ fn try_main(log: &mut Log) -> Result<()> {
     Ok(())
 }
 
-fn query_user(i: usize, user: &str, cursor: &Cursor) -> String {
+fn query_owner(i: usize, login: &str, cursor: &Cursor) -> String {
     r#"
-        user$i: repositoryOwner(login: "$user") {
+        owner$i: repositoryOwner(login: "$login") {
           login
           repositories(after: $cursor, first: 100, isFork: false, privacy: PUBLIC, ownerAffiliations: [OWNER]) {
             pageInfo {
@@ -522,13 +522,13 @@ fn query_user(i: usize, user: &str, cursor: &Cursor) -> String {
         }
     "#
     .replace("$i", &i.to_string())
-    .replace("$user", user)
+    .replace("$login", login)
     .replace("$cursor", &cursor.to_string())
 }
 
-fn query_repo(i: usize, user: &str, repo: &str, cursor: &Cursor) -> String {
+fn query_repo(i: usize, owner: &str, repo: &str, cursor: &Cursor) -> String {
     r#"
-        repo$i: repository(owner: "$user", name: "$repo") {
+        repo$i: repository(owner: "$owner", name: "$repo") {
           name
           owner {
             login
@@ -548,7 +548,7 @@ fn query_repo(i: usize, user: &str, repo: &str, cursor: &Cursor) -> String {
         }
     "#
     .replace("$i", &i.to_string())
-    .replace("$user", user)
+    .replace("$owner", owner)
     .replace("$repo", repo)
     .replace("$cursor", &cursor.to_string())
 }
