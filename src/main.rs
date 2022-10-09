@@ -498,7 +498,7 @@ fn try_main(log: &mut Log) -> Result<()> {
 
 fn query_user(i: usize, user: &str, cursor: &Cursor) -> String {
     r#"
-        user$i: user(login: "$user") {
+        user$i: repositoryOwner(login: "$user") {
           login
           repositories(after: $cursor, first: 100, isFork: false, privacy: PUBLIC, ownerAffiliations: [OWNER]) {
             pageInfo {
