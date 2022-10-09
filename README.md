@@ -6,7 +6,7 @@ GitHub star history
 [<img alt="build status" src="https://img.shields.io/github/workflow/status/dtolnay/star-history/CI/master?style=for-the-badge" height="20">](https://github.com/dtolnay/star-history/actions?query=branch%3Amaster)
 
 Command line program to generate a graph showing number of GitHub stars of a
-user or repo over time.
+user, org or repo over time.
 
 ```console
 $ cargo install star-history
@@ -35,6 +35,7 @@ Then:
 $ export GITHUB_TOKEN=$(cat ~/.githubtoken)
 
 $ star-history dtolnay
+$ star-history async-rs
 $ star-history rust-lang/rust
 ```
 
