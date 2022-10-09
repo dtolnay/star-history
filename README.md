@@ -35,7 +35,7 @@ Then:
 $ export GITHUB_TOKEN=$(cat ~/.githubtoken)
 
 $ star-history dtolnay
-$ star-history async-rs
+$ star-history serde-rs
 $ star-history rust-lang/rust
 ```
 
