@@ -6,7 +6,7 @@ GitHub star history
 [<img alt="build status" src="https://img.shields.io/github/workflow/status/dtolnay/star-history/CI/master?style=for-the-badge" height="20">](https://github.com/dtolnay/star-history/actions?query=branch%3Amaster)
 
 Command line program to generate a graph showing number of GitHub stars of a
-user or repo over time.
+user, org or repo over time.
 
 ```console
 $ cargo install star-history
@@ -25,9 +25,8 @@ $ cargo install star-history
 ## Usage
 
 We require a token for accessing GitHub's GraphQL API. Head to
-https://github.com/settings/tokens and click "Generate new token". The default
-public access permission is sufficient &mdash; you can leave all the checkboxes
-empty. Save the generated token somewhere like ~/.githubtoken.
+https://github.com/settings/tokens and click "Generate new token". Organizations require
+the `read:org` permission. Save the generated token somewhere like ~/.githubtoken.
 
 Then:
 
@@ -35,6 +34,7 @@ Then:
 $ export GITHUB_TOKEN=$(cat ~/.githubtoken)
 
 $ star-history dtolnay
+$ star-history async-rs
 $ star-history rust-lang/rust
 ```
 
