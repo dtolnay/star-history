@@ -494,7 +494,7 @@ fn try_main(log: &mut Log) -> Result<()> {
     let html = include_str!("index.html").replace("var data = [];", &data);
     let dir = env::temp_dir().join("star-history");
     fs::create_dir_all(&dir)?;
-    let path = dir.join(format!("{}.html", now.timestamp()));
+    let path = dir.join(format!("{}.html", now.timestamp_millis()));
     fs::write(&path, html)?;
 
     if opener::open(&path).is_err() {
