@@ -3,7 +3,7 @@ GitHub star history
 
 [<img alt="github" src="https://img.shields.io/badge/github-dtolnay/star--history-8da0cb?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/dtolnay/star-history)
 [<img alt="crates.io" src="https://img.shields.io/crates/v/star-history.svg?style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/star-history)
-[<img alt="build status" src="https://img.shields.io/github/workflow/status/dtolnay/star-history/CI/master?style=for-the-badge" height="20">](https://github.com/dtolnay/star-history/actions?query=branch%3Amaster)
+[<img alt="build status" src="https://img.shields.io/github/actions/workflow/status/dtolnay/star-history/ci.yml?branch=master&style=for-the-badge" height="20">](https://github.com/dtolnay/star-history/actions?query=branch%3Amaster)
 
 Command line program to generate a graph showing number of GitHub stars of a
 user, org or repo over time.
