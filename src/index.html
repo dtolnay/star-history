@@ -30,7 +30,7 @@
     // Round up time to date
     var valuesByDate = data[0].values.map(function(d) {
       return {
-        time: 86400 * Math.ceil(d.time / 86400), // Round to date,
+        time: 86400 * Math.floor(d.time / 86400), // Round to date,
         stars: d.stars
       };
     });
