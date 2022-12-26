@@ -221,9 +221,10 @@
             var above = d.values[idx - (idx == d.values.length)];
             var interp = below.time == above.time ? 0 : (xDate - below.time) / (above.time - below.time);
             var val = d3.interpolateNumber(below.stars, above.stars)(interp);
+            var item = d.values[idx == 0 ? 0 : idx - 1];
 
             d3.select(this).select('text')
-              .text(d.values[idx == 0 ? 0 : idx - 1].stars);
+              .text(item.time.toLocaleString() + " - ★: " + item.stars);
 
             return "translate(" + mouse[0] + "," + y(val) +")";
           });
