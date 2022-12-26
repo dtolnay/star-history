@@ -27,6 +27,27 @@
   <script>
     var data = [];
 
+    // Round up time to date
+    var valuesByDate = data[0].values.map(function(d) {
+      return {
+        time: 86400 * Math.ceil(d.time / 86400), // Round to date,
+        stars: d.stars
+      };
+    });
+
+    // Keep only last value of stars for each day
+    valuesByDate = valuesByDate.reduce(function(acc, d) {
+      if (acc.length === 0 || acc[acc.length - 1].time !== d.time) {
+        acc.push(d);
+      } else {
+        acc[acc.length - 1].stars = d.stars;
+      }
+      return acc;
+    }, []);
+
+    // Update the values
+    data[0].values = valuesByDate;
+
     var margin = { top: 20, right: 100, bottom: 30, left: 50 };
     var width = 950 - margin.left - margin.right;
     var height = 500 - margin.top - margin.bottom;
@@ -60,7 +81,7 @@
         d.time = new Date(d.time * 1000);
       });
     });
-    
+
     var minDate = d3.min(data, function(dataset) {
       return dataset.values[0].time;
     });
@@ -222,11 +243,12 @@
             var interp = below.time == above.time ? 0 : (xDate - below.time) / (above.time - below.time);
             var val = d3.interpolateNumber(below.stars, above.stars)(interp);
             var item = d.values[idx == 0 ? 0 : idx - 1];
+            var xVal = mouse[0] > 100 ? mouse[0] : mouse[0] + 125;
 
             d3.select(this).select('text')
-              .text(item.time.toLocaleString() + " - ★: " + item.stars);
+              .text(item.time.toISOString().split('T')[0] + " - ★: " + item.stars);
 
-            return "translate(" + mouse[0] + "," + y(val) +")";
+            return "translate(" + xVal + "," + y(val) +")";
           });
       });
   </script>
