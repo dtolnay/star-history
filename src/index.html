@@ -49,7 +49,7 @@
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      .attr("transform", `translate(${margin.left},${margin.top})`);
 
     color.domain(data.map(function(dataset) {
       return dataset.name;
@@ -108,7 +108,7 @@
 
     svg.append("g")
       .attr("class", "x axis")
-      .attr("transform", "translate(0," + height + ")")
+      .attr("transform", `translate(0,${height})`)
       .call(xAxis);
 
     svg.append("g")
@@ -144,7 +144,7 @@
         };
       })
       .attr("transform", function(d) {
-        return "translate(" + x(d.value.time) + "," + y(d.value.stars) + ")";
+        return `translate(${x(d.value.time)},${y(d.value.stars)})`;
       })
       .attr("x", 3)
       .attr("dy", ".35em")
@@ -207,9 +207,7 @@
         var mouse = d3.pointer(event);
         d3.select(".mouse-line")
           .attr("d", function() {
-            var d = "M" + mouse[0] + "," + height;
-            d += " " + mouse[0] + "," + 0;
-            return d;
+            return `M${mouse[0]},${height} ${mouse[0]},0`;
           });
 
         d3.selectAll(".mouse-per-line")
@@ -225,7 +223,7 @@
             d3.select(this).select('text')
               .text(d.values[idx == 0 ? 0 : idx - 1].stars);
 
-            return "translate(" + mouse[0] + "," + y(val) +")";
+            return `translate(${mouse[0]},${y(val)})`;
           });
       });
   </script>
