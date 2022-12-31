@@ -191,8 +191,9 @@
           var val = d3.interpolateNumber(below.stars, above.stars)(interp);
 
           d3.select(this)
+            .style("opacity", below.stars ? "1" : "0")
             .select("text")
-            .text(d.values[idx == 0 ? 0 : idx - 1].stars);
+            .text(below.stars);
 
           return `translate(0 ${y(val)})`;
         });
