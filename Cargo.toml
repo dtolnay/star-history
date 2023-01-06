@@ -20,3 +20,6 @@ thiserror = "1.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
+
+[patch.crates-io]
+tokio = { git = "https://github.com/dtolnay-contrib/tokio", branch = "staticatomicu64" }
