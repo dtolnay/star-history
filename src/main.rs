@@ -338,9 +338,9 @@ fn try_main(log: &mut Log) -> Result<()> {
         }
     }
 
-    let authorization = match env::var("GITHUB_TOKEN") {
-        Ok(token) => format!("bearer {}", token.trim()),
-        Err(_) => {
+    let authorization = match env::var_os("GITHUB_TOKEN") {
+        Some(token) => format!("bearer {}", token.to_string_lossy().trim()),
+        None => {
             eprint!("{}", MISSING_TOKEN);
             process::exit(1);
         }
