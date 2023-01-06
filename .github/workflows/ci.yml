@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust: [nightly, beta, stable, 1.56.1]
+        rust: [nightly, beta, stable, 1.65.0]
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v3
@@ -40,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@clippy
-      - run: cargo clippy -- -Dclippy::all -Dclippy::pedantic
+      - run: cargo clippy --workspace -- -Dclippy::all -Dclippy::pedantic
 
   outdated:
     name: Outdated

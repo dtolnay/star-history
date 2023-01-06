@@ -1,0 +1,17 @@
+[package]
+name = "gh-token"
+version = "0.0.0"
+authors = ["David Tolnay <dtolnay@gmail.com>"]
+description = "Deserialize gh cli's GitHub token from ~/.config/gh/hosts.yml"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/dtolnay/star-history"
+
+[dependencies]
+home = "0.5"
+serde = "1"
+serde_derive = "1"
+serde_yaml = "0.9"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]

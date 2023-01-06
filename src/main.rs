@@ -46,10 +46,10 @@ David Tolnay <dtolnay@gmail.com>
 Produce a graph showing number of GitHub stars of a user or repo over time.
 
 USAGE:
+    gh auth login
     star-history [USER ...] [USER/REPO ...]
 
 EXAMPLES:
-    export GITHUB_TOKEN=$(cat ~/.githubtoken)
     star-history dtolnay
     star-history dtolnay/syn dtolnay/quote
     star-history serde-rs/serde
@@ -57,15 +57,20 @@ EXAMPLES:
 );
 
 static MISSING_TOKEN: &str = "\
-Error: environment variable GITHUB_TOKEN must be defined.
+Error: GitHub auth token is not set up.
 
-Log in to https://github.com/settings/tokens and click \"Generate new
-token\". The default public access permission is sufficient -- you can
-leave all the checkboxes empty. Save the generated token somewhere like 
-~/.githubtoken and use:
+(Expected config file: {{path}})
 
-    export GITHUB_TOKEN=$(cat ~/.githubtoken)
+Run `gh auth login` to store a GitHub login token. The `gh` CLI
+can be installed from <https://cli.github.com>.
 
+If you prefer not to use the `gh` CLI, you can instead
+provide a token to star-history through the GITHUB_TOKEN
+environment variable. Head to <https://github.com/settings/tokens>
+and click \"Generate new token\". The default public access
+permission is sufficient -- you can leave all the checkboxes
+empty. Save the generated token somewhere like ~/.githubtoken
+and use `export GITHUB_TOKEN=$(cat ~/.githubtoken)`.
 ";
 
 #[derive(Error, Debug)]
@@ -78,6 +83,8 @@ enum Error {
     NoSuchUser(String),
     #[error("no such repository: {0}/{1}")]
     NoSuchRepo(String, String),
+    #[error(transparent)]
+    GhToken(#[from] gh_token::Error),
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
@@ -338,13 +345,21 @@ fn try_main(log: &mut Log) -> Result<()> {
         }
     }
 
-    let authorization = match env::var_os("GITHUB_TOKEN") {
-        Some(token) => format!("bearer {}", token.to_string_lossy().trim()),
-        None => {
-            eprint!("{}", MISSING_TOKEN);
-            process::exit(1);
+    let github_token = if let Some(token) = env::var_os("GITHUB_TOKEN") {
+        token.to_string_lossy().into_owned()
+    } else {
+        match gh_token::get() {
+            Ok(token) => token,
+            Err(gh_token::Error::NotConfigured(path)) => {
+                let path_lossy = path.to_string_lossy();
+                let message = MISSING_TOKEN.replace("{{path}}", &path_lossy);
+                eprint!("{}", message);
+                process::exit(1);
+            }
+            Err(error) => return Err(Error::GhToken(error)),
         }
     };
+    let authorization = format!("bearer {}", github_token.trim());
 
     if args.is_empty() {
         eprint!("{}", HELP);
