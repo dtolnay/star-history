@@ -24,15 +24,14 @@ $ cargo install star-history
 
 ## Usage
 
-We require a token for accessing GitHub's GraphQL API. Head to
-https://github.com/settings/tokens and click "Generate new token". The default
-public access permission is sufficient &mdash; you can leave all the checkboxes
-empty. Save the generated token somewhere like ~/.githubtoken.
+We require a token for accessing GitHub's GraphQL API. If you have the [GitHub
+CLI] (`gh`) installed, you can run `gh auth status` to find out whether a token
+is already set up on your machine, and `gh auth login` if one isn't.
 
-Then:
+[GitHub CLI]: https://cli.github.com
 
 ```console
-$ export GITHUB_TOKEN=$(cat ~/.githubtoken)
+$ gh auth login
 
 $ star-history dtolnay
 $ star-history serde-rs
@@ -45,6 +44,13 @@ same graph.
 The generated graphs use [D3](https://d3js.org/); the star-history command
 should pop open a browser showing your graph. It uses the same mechanism that
 `cargo doc --open` uses so hopefully it works well on various systems.
+
+If you prefer not to use the `gh` CLI, you can instead provide a token to
+star-history through the GITHUB\_TOKEN environment variable. Head to
+<https://github.com/settings/tokens> and click "Generate new token". The default
+public access permission is sufficient &mdash; you can leave all the checkboxes
+empty. Save the generated token somewhere like ~/.githubtoken. Then `export
+GITHUB_TOKEN=$(cat ~/.githubtoken)` prior to running star-history commands.
 
 <br>
 
