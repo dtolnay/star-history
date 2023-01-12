@@ -64,10 +64,10 @@ Error: GitHub auth token is not set up.
 Run `gh auth login` to store a GitHub login token. The `gh` CLI
 can be installed from <https://cli.github.com>.
 
-If you prefer not to use the `gh` CLI, you can instead
-provide a token to star-history through the GITHUB_TOKEN
-environment variable. Head to <https://github.com/settings/tokens>
-and click \"Generate new token\". The default public access
+If you prefer not to use the `gh` CLI, you can instead provide
+a token to star-history through the GITHUB_TOKEN environment
+variable. Head to <https://github.com/settings/tokens> and click
+\"Generate new token (classic)\". The default public access
 permission is sufficient -- you can leave all the checkboxes
 empty. Save the generated token somewhere like ~/.githubtoken
 and use `export GITHUB_TOKEN=$(cat ~/.githubtoken)`.

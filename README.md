@@ -47,10 +47,11 @@ should pop open a browser showing your graph. It uses the same mechanism that
 
 If you prefer not to use the `gh` CLI, you can instead provide a token to
 star-history through the GITHUB\_TOKEN environment variable. Head to
-<https://github.com/settings/tokens> and click "Generate new token". The default
-public access permission is sufficient &mdash; you can leave all the checkboxes
-empty. Save the generated token somewhere like ~/.githubtoken. Then `export
-GITHUB_TOKEN=$(cat ~/.githubtoken)` prior to running star-history commands.
+<https://github.com/settings/tokens> and click "Generate new token (classic)".
+The default public access permission is sufficient &mdash; you can leave all the
+checkboxes empty. Save the generated token somewhere like ~/.githubtoken. Then
+`export GITHUB_TOKEN=$(cat ~/.githubtoken)` prior to running star-history
+commands.
 
 <br>
 
