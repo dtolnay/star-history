@@ -17,8 +17,8 @@ impl Log {
     }
 
     pub fn tick(&mut self) {
-        _ = write!(self.stderr, ".");
-        _ = self.stderr.flush();
+        let _ = write!(self.stderr, ".");
+        let _ = self.stderr.flush();
         self.page += 1;
     }
 
@@ -32,17 +32,17 @@ impl Log {
 
     pub fn write_fmt(&mut self, args: fmt::Arguments) {
         if self.page > 0 {
-            _ = writeln!(self.stderr);
+            let _ = writeln!(self.stderr);
             self.page = 0;
         }
-        _ = self.stderr.write_fmt(args);
+        let _ = self.stderr.write_fmt(args);
     }
 }
 
 impl Drop for Log {
     fn drop(&mut self) {
         if self.page > 0 {
-            _ = writeln!(self.stderr);
+            let _ = writeln!(self.stderr);
         }
     }
 }
