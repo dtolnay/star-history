@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/gh-token/0.1.0")]
+#![doc(html_root_url = "https://docs.rs/gh-token/0.1.1")]
 #![allow(clippy::module_name_repetitions, clippy::missing_errors_doc)]
 
 use crate::error::ParseError;
