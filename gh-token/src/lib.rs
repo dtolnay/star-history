@@ -33,6 +33,7 @@ mod error {
     use std::path::PathBuf;
 
     pub enum ParseError {
+        EnvNonUtf8(&'static str),
         Io(PathBuf, io::Error),
         Yaml(PathBuf, serde_yaml::Error),
     }
@@ -48,6 +49,13 @@ impl Display for Error {
                     formatter,
                     "no github.com token found in {}; use `gh auth login` to authenticate",
                     path.display(),
+                )
+            }
+            Error::Parse(ParseError::EnvNonUtf8(var)) => {
+                write!(
+                    formatter,
+                    "environment variable ${} contains non-utf8 value",
+                    var,
                 )
             }
             Error::Parse(ParseError::Io(path, io_error)) => {
@@ -72,6 +80,14 @@ impl Debug for Error {
 }
 
 pub fn get() -> Result<String, Error> {
+    for var in ["GH_TOKEN", "GITHUB_TOKEN"] {
+        if let Some(token_from_env) = env::var_os(var) {
+            return token_from_env
+                .into_string()
+                .map_err(|_| Error::Parse(ParseError::EnvNonUtf8(var)));
+        }
+    }
+
     let Some(path) = hosts_config_file() else {
         let fallback_path = Path::new("~").join(".config").join("gh").join("hosts.yml");
         return Err(Error::NotConfigured(fallback_path));
