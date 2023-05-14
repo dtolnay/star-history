@@ -1,5 +1,9 @@
 #![doc(html_root_url = "https://docs.rs/gh-token/0.1.1")]
-#![allow(clippy::module_name_repetitions, clippy::missing_errors_doc)]
+#![allow(
+    clippy::missing_errors_doc,
+    clippy::module_name_repetitions,
+    clippy::uninlined_format_args
+)]
 
 use crate::error::ParseError;
 use serde_derive::Deserialize;
