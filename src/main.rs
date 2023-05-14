@@ -346,19 +346,15 @@ fn try_main(log: &mut Log) -> Result<()> {
         }
     }
 
-    let github_token = if let Some(token) = env::var_os("GITHUB_TOKEN") {
-        token.to_string_lossy().into_owned()
-    } else {
-        match gh_token::get() {
-            Ok(token) => token,
-            Err(gh_token::Error::NotConfigured(path)) => {
-                let path_lossy = path.to_string_lossy();
-                let message = MISSING_TOKEN.replace("{{path}}", &path_lossy);
-                eprint!("{}", message);
-                process::exit(1);
-            }
-            Err(error) => return Err(Error::GhToken(error)),
+    let github_token = match gh_token::get() {
+        Ok(token) => token,
+        Err(gh_token::Error::NotConfigured(path)) => {
+            let path_lossy = path.to_string_lossy();
+            let message = MISSING_TOKEN.replace("{{path}}", &path_lossy);
+            eprint!("{}", message);
+            process::exit(1);
         }
+        Err(error) => return Err(Error::GhToken(error)),
     };
     let authorization = format!("bearer {}", github_token.trim());
 
