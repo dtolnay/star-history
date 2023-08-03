@@ -11,6 +11,7 @@ use std::env;
 use std::fmt::{self, Debug, Display};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 #[derive(Deserialize)]
 struct Config {
@@ -115,7 +116,7 @@ pub fn get() -> Result<String, Error> {
         }
     }
 
-    Err(Error::NotConfigured(path))
+    token_from_cli().ok_or(Error::NotConfigured(path))
 }
 
 fn hosts_config_file() -> Option<PathBuf> {
@@ -146,4 +147,9 @@ fn config_dir() -> Option<PathBuf> {
 
     let home_dir = home::home_dir()?;
     Some(home_dir.join(".config").join("gh"))
+}
+
+fn token_from_cli() -> Option<String> {
+    let stdout = Command::new("gh").arg("auth").arg("token").output().ok()?;
+    String::from_utf8(stdout.stdout).ok()
 }
