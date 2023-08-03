@@ -1,6 +1,6 @@
 [package]
 name = "star-history"
-version = "1.0.12"
+version = "1.0.13"
 authors = ["David Tolnay <dtolnay@gmail.com>"]
 categories = ["command-line-utilities"]
 description = "Graph history of GitHub stars of a user or repo over time"
@@ -12,7 +12,7 @@ repository = "https://github.com/dtolnay/star-history"
 [dependencies]
 anyhow = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
-gh-token = { version = "0.1.2", path = "gh-token" }
+gh-token = { version = "0.1.4", path = "gh-token" }
 opener = "0.6"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 serde = "1.0"

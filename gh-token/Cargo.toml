@@ -1,6 +1,6 @@
 [package]
 name = "gh-token"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["David Tolnay <dtolnay@gmail.com>"]
 description = "Deserialize gh cli's GitHub token from ~/.config/gh/hosts.yml"
 edition = "2021"
