@@ -150,6 +150,6 @@ fn config_dir() -> Option<PathBuf> {
 }
 
 fn token_from_cli() -> Option<String> {
-    let stdout = Command::new("gh").arg("auth").arg("token").output().ok()?;
-    String::from_utf8(stdout.stdout).ok()
+    let output = Command::new("gh").arg("auth").arg("token").output().ok()?;
+    String::from_utf8(output.stdout).ok()
 }
