@@ -116,7 +116,20 @@ pub fn get() -> Result<String, Error> {
         }
     }
 
-    token_from_cli().ok_or(Error::NotConfigured(path))
+    // While support for `gh auth token` is being rolled out, do not report
+    // errors from it yet. It probably means the user's installed `gh` does not
+    // have the feature.
+    //
+    // "As of right now storing the authentication token in the system keyring
+    // is an opt-in feature, but in the near future it will be required"
+    if let Some(token) = token_from_cli() {
+        return Ok(token);
+    }
+
+    // When system keyring auth tokens become required in the near future, this
+    // message needs to change to stop recommending putting a plain-text token
+    // into that yaml file.
+    Err(Error::NotConfigured(path))
 }
 
 fn hosts_config_file() -> Option<PathBuf> {
