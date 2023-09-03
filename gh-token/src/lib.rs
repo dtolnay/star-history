@@ -164,5 +164,9 @@ fn config_dir() -> Option<PathBuf> {
 
 fn token_from_cli() -> Option<String> {
     let output = Command::new("gh").arg("auth").arg("token").output().ok()?;
-    String::from_utf8(output.stdout).ok()
+    let mut token = String::from_utf8(output.stdout).ok()?;
+    // Trim the captured trailing newline from CLI output
+    let token_len = token.trim_end().len();
+    token.truncate(token_len);
+    Some(token)
 }
