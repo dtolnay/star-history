@@ -3,6 +3,7 @@ name = "gh-token"
 version = "0.1.5"
 authors = ["David Tolnay <dtolnay@gmail.com>"]
 description = "Deserialize gh cli's GitHub token from ~/.config/gh/hosts.yml"
+documentation = "https://docs.rs/gh-token"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/dtolnay/star-history"
