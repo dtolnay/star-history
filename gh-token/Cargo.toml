@@ -10,9 +10,9 @@ repository = "https://github.com/dtolnay/star-history"
 
 [dependencies]
 home = "0.5"
-serde = "1"
-serde_derive = "1"
-serde_yaml = "0.9.28"
+serde = "1.0.194"
+serde_derive = "1.0.194"
+serde_yaml = "0.9.30"
 
 [lib]
 doc-scrape-examples = false

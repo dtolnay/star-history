@@ -10,15 +10,15 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/dtolnay/star-history"
 
 [dependencies]
-anyhow = "1.0"
+anyhow = "1.0.79"
 chrono = { version = "0.4", features = ["serde"] }
 gh-token = { version = "0.1.6", path = "gh-token" }
 opener = "0.6"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
-serde = "1.0"
-serde_derive = "1.0"
-serde_json = "1.0"
-thiserror = "1.0"
+serde = "1.0.194"
+serde_derive = "1.0.194"
+serde_json = "1.0.110"
+thiserror = "1.0.56"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
