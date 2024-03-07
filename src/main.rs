@@ -20,7 +20,7 @@
 mod log;
 
 use crate::log::Log;
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, TimeDelta, Utc};
 use reqwest::blocking::Client;
 use reqwest::header::{AUTHORIZATION, USER_AGENT};
 use serde::de::{self, Deserialize, Deserializer, IgnoredAny, MapAccess, SeqAccess, Visitor};
@@ -469,7 +469,7 @@ fn try_main(log: &mut Log) -> Result<()> {
         if let Some(first) = set.iter().next() {
             let first_time = first.time;
             set.insert(Star {
-                time: first_time - Duration::seconds(1),
+                time: first_time - TimeDelta::try_seconds(1).unwrap(),
                 node: Default::default(),
             });
         }

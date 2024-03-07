@@ -11,7 +11,7 @@ repository = "https://github.com/dtolnay/star-history"
 
 [dependencies]
 anyhow = "1.0.79"
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4.35", features = ["serde"] }
 gh-token = { version = "0.1.7", path = "gh-token" }
 opener = "0.6"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
