@@ -10,6 +10,7 @@ use serde_derive::Deserialize;
 use std::env;
 use std::fmt::{self, Debug, Display};
 use std::fs;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -94,15 +95,15 @@ pub fn get() -> Result<String, Error> {
         return Err(Error::NotConfigured(fallback_path));
     };
 
-    match path.try_exists() {
-        Ok(true) => {}
-        Ok(false) => return Err(Error::NotConfigured(path)),
-        Err(io_error) => return Err(Error::Parse(ParseError::Io(path, io_error))),
-    }
-
     let content = match fs::read(&path) {
         Ok(content) => content,
-        Err(io_error) => return Err(Error::Parse(ParseError::Io(path, io_error))),
+        Err(io_error) => {
+            return Err(if io_error.kind() == ErrorKind::NotFound {
+                Error::NotConfigured(path)
+            } else {
+                Error::Parse(ParseError::Io(path, io_error))
+            });
+        }
     };
 
     let config: Config = match serde_yaml::from_slice(&content) {
