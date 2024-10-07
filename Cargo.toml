@@ -1,6 +1,6 @@
 [package]
 name = "star-history"
-version = "1.0.22"
+version = "1.0.23"
 authors = ["David Tolnay <dtolnay@gmail.com>"]
 categories = ["command-line-utilities"]
 description = "Graph history of GitHub stars of a user or repo over time"
