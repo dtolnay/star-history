@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/gh-token/0.1.1")]
+#![doc(html_root_url = "https://docs.rs/gh-token/0.1.7")]
 #![allow(
     clippy::missing_errors_doc,
     clippy::module_name_repetitions,
