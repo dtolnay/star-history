@@ -508,9 +508,8 @@ fn try_main(log: &mut Log) -> Result<()> {
     let path = dir.join(format!("{}.html", now.timestamp_millis()));
     fs::write(&path, html)?;
 
-    if opener::open(&path).is_err() {
-        writeln!(log, "graph written to {}", path.display());
-    }
+    writeln!(log, "graph written to {}", path.display());
+    let _ = opener::open(&path);
     Ok(())
 }
 
