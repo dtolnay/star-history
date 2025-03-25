@@ -22,7 +22,8 @@ mod log;
 use crate::log::Log;
 use chrono::{DateTime, TimeDelta, Utc};
 use reqwest::blocking::Client;
-use reqwest::header::{AUTHORIZATION, USER_AGENT};
+use reqwest::header::{AUTHORIZATION, RETRY_AFTER, USER_AGENT};
+use reqwest::StatusCode;
 use serde::de::{self, Deserialize, Deserializer, IgnoredAny, MapAccess, SeqAccess, Visitor};
 use serde_derive::{Deserialize, Serialize};
 use std::cmp::{self, Ordering};
@@ -33,7 +34,10 @@ use std::fs;
 use std::io;
 use std::marker::PhantomData;
 use std::mem;
+use std::num::ParseIntError;
 use std::process;
+use std::thread;
+use std::time::Duration;
 use thiserror::Error;
 
 static VERSION: &str = concat!("star-history ", env!("CARGO_PKG_VERSION"));
@@ -84,6 +88,10 @@ enum Error {
     NoSuchUser(String),
     #[error("no such repository: {0}/{1}")]
     NoSuchRepo(String, String),
+    #[error("failed to parse Retry-After header from GitHub")]
+    RetryAfterStr(#[source] reqwest::header::ToStrError),
+    #[error("failed to parse Retry-After header from GitHub")]
+    RetryAfterInt(#[source] ParseIntError),
     #[error(transparent)]
     GhToken(#[from] gh_token::Error),
     #[error(transparent)]
@@ -379,24 +387,43 @@ fn try_main(log: &mut Log) -> Result<()> {
         let defer = work.split_off(batch_size);
         let batch = mem::replace(&mut work, defer);
 
-        let mut query = String::new();
-        query += "{\n";
+        let mut request = Request {
+            query: String::new(),
+        };
+        request.query += "{\n";
         for (i, work) in batch.iter().enumerate() {
             let cursor = &work.cursor;
-            query += &match &work.series {
+            request.query += &match &work.series {
                 Series::Owner(owner) => query_owner(i, owner, cursor),
                 Series::Repo(owner, repo) => query_repo(i, owner, repo, cursor),
             };
         }
-        query += "}\n";
+        request.query += "}\n";
 
-        let json = client
-            .post("https://api.github.com/graphql")
-            .header(USER_AGENT, "dtolnay/star-history")
-            .header(AUTHORIZATION, &authorization)
-            .json(&Request { query })
-            .send()?
-            .text()?;
+        let json = loop {
+            let response = client
+                .post("https://api.github.com/graphql")
+                .header(USER_AGENT, "dtolnay/star-history")
+                .header(AUTHORIZATION, &authorization)
+                .json(&request)
+                .send()?;
+
+            if response.status() == StatusCode::FORBIDDEN {
+                if let Some(retry_after) = response.headers().get(RETRY_AFTER) {
+                    let retry_after: u64 = retry_after
+                        .to_str()
+                        .map_err(Error::RetryAfterStr)?
+                        .parse()
+                        .map_err(Error::RetryAfterInt)?;
+                    let msg = format!("waiting {} seconds as requested by GitHub", retry_after);
+                    log.note(&msg);
+                    thread::sleep(Duration::from_secs(retry_after));
+                    continue;
+                }
+            }
+
+            break response.text()?;
+        };
 
         let response: Response = serde_json::from_str(&json).map_err(Error::DecodeResponse)?;
         if let Some(message) = response.message {

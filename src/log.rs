@@ -22,6 +22,12 @@ impl Log {
         self.page += 1;
     }
 
+    pub fn note(&mut self, msg: &str) {
+        let _ = write!(self.stderr, "[{}]", msg);
+        let _ = self.stderr.flush();
+        self.page += 1;
+    }
+
     pub fn error(&mut self, err: Error) {
         let prefix = match err {
             Error::GitHub(_) => "", // already starts with "Error"
