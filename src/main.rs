@@ -544,7 +544,7 @@ fn query_owner(i: usize, login: &str, cursor: &Cursor) -> String {
     r#"
         owner$i: repositoryOwner(login: "$login") {
           login
-          repositories(after: $cursor, first: 100, isFork: false, privacy: PUBLIC, ownerAffiliations: [OWNER]) {
+          repositories(after: $cursor, first: 10, isFork: false, privacy: PUBLIC, ownerAffiliations: [OWNER]) {
             pageInfo {
               hasNextPage
               endCursor
@@ -570,7 +570,7 @@ fn query_repo(i: usize, owner: &str, repo: &str, cursor: &Cursor) -> String {
           owner {
             login
           }
-          stargazers(after: $cursor, first: 100) {
+          stargazers(after: $cursor, first: 20) {
             pageInfo {
               hasNextPage
               endCursor
