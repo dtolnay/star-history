@@ -12,8 +12,6 @@ user, org or repo over time.
 $ cargo install star-history
 ```
 
-*Compiler support: requires rustc 1.46+*
-
 <br>
 
 ## Screenshot
