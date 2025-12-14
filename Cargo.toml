@@ -8,6 +8,7 @@ edition = "2021"
 exclude = ["screenshots"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/dtolnay/star-history"
+rust-version = "1.88"
 
 [dependencies]
 anyhow = "1.0.79"
