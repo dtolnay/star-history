@@ -14,7 +14,7 @@ rust-version = "1.88"
 anyhow = "1.0.79"
 chrono = { version = "0.4.35", features = ["serde"] }
 gh-token = { version = "0.1.7", path = "gh-token" }
-opener = "0.8"
+opener = "0.9"
 reqwest = { version = "0.13", features = ["blocking", "json"] }
 serde = "1.0.194"
 serde_derive = "1.0.194"
